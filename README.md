@@ -41,7 +41,7 @@ The Billing Agent Pipeline is an automated, multi-stage Python orchestrator desi
 ## Configuration
 Before running the pipeline, several configurations must be set up. Create a `.env` file in the root directory of the project with the following required variables:
 
-### 1. Slack Integration (Optional but recommended)
+### 1. Slack Integration (Required)
 Used by the `notification_agent` to send alerts and reports.
 ```env
 SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
