@@ -39,12 +39,38 @@ The Billing Agent Pipeline is an automated, multi-stage Python orchestrator desi
    ```
 
 ## Configuration
-Create a `.env` file in the root directory of the project and add your configuration details. For example:
+Before running the pipeline, several configurations must be set up. Create a `.env` file in the root directory of the project with the following required variables:
+
+### 1. Slack Integration (Optional but recommended)
+Used by the `notification_agent` to send alerts and reports.
 ```env
 SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
 SLACK_CHANNEL=#billing-alerts
+ATTACH_REPORTS=true
 ```
-*(Note: Make sure your `.env` file is never committed to version control. It is already included in the `.gitignore`.)*
+
+### 2. Google Sheets Configuration (For Reconciliation)
+The `reconciliation_agent` requires access to a Google Sheet via the Google Sheets API. You must provide a service account JSON file.
+```env
+GOOGLE_SHEET_ID=your-google-sheet-id
+GOOGLE_SHEET_TAB_NAME=Sheet1
+GOOGLE_SERVICE_ACCOUNT_FILE=credentials.json
+```
+**Google Credentials Setup:**
+- Go to the [Google Cloud Console](https://console.cloud.google.com/).
+- Enable the **Google Sheets API** and **Google Drive API**.
+- Create a **Service Account** and generate a JSON key.
+- Save the JSON key in the root directory as `credentials.json` (or update `GOOGLE_SERVICE_ACCOUNT_FILE` with its path).
+- *Important:* Share your target Google Sheet with the email address of the generated Service Account.
+
+### 3. Data Folders
+These specify where the pipeline should look for incoming files and where it should save generated reports.
+```env
+INPUT_FOLDER=data/input
+OUTPUT_FOLDER=data/output
+```
+
+*(Note: Make sure your `.env` and `credentials.json` files are never committed to version control. They are already included in the `.gitignore`.)*
 
 ## Usage
 Run the pipeline orchestrator using the `main.py` script. You can specify the operational mode using the `--mode` argument.
