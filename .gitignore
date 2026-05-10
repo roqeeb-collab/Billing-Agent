@@ -4,3 +4,10 @@ __pycache__/
 .env
 logs/
 .DS_Store
+credentials.json
+credentials.json.json
+mingit/
+mingit.zip
+python_installer.exe
+python_nuget.zip
+python_portable/
