@@ -20,3 +20,168 @@
 2026-05-11 16:50:58 | INFO     | pipeline | ============================================================
 2026-05-11 16:50:58 | INFO     | pipeline | DAILY RUN COMPLETED in 0.8 seconds
 2026-05-11 16:50:58 | INFO     | pipeline | ============================================================
+2026-05-12 10:17:29 | INFO     | pipeline | ============================================================
+2026-05-12 10:17:29 | INFO     | pipeline | DAILY RUN STARTED
+2026-05-12 10:17:29 | INFO     | pipeline | ============================================================
+2026-05-12 10:17:32 | INFO     | pipeline | Ingestion (attempt 1/3)
+2026-05-12 10:17:32 | INFO     | agents.ingestion_agent | Checking Google Drive folder 13bseNGXVAy9A7j8ky4ecdHdQXKahc_AO for latest files
+2026-05-12 10:17:34 | WARNING  | agents.ingestion_agent | No files found in Drive folder 13bseNGXVAy9A7j8ky4ecdHdQXKahc_AO
+2026-05-12 10:17:34 | INFO     | agents.ingestion_agent | Ingestion started — scanning local folder data/input
+2026-05-12 10:17:34 | INFO     | agents.ingestion_agent | Selected local file: data/input\test_accounts.xlsx
+2026-05-12 10:17:34 | INFO     | agents.ingestion_agent | Raw rows loaded: 4
+2026-05-12 10:17:34 | DEBUG    | agents.ingestion_agent | Columns after standardisation: ['card_id', 'created_at', 'card_limit', 'is_real_ten_thousand_card', 'card_name', 'merchant_name']
+2026-05-12 10:17:34 | INFO     | agents.ingestion_agent | Deduplication: 1 duplicates removed, 3 rows remain
+2026-05-12 10:17:34 | INFO     | pipeline | Validation
+2026-05-12 10:17:34 | INFO     | agents.validation_agent | Validation started — 3 rows to check
+2026-05-12 10:17:34 | INFO     | agents.validation_agent | No validation errors found
+2026-05-12 10:17:34 | INFO     | agents.validation_agent | Validation passed — 3 valid rows
+2026-05-12 10:17:34 | INFO     | pipeline | Computing card stats
+2026-05-12 10:17:34 | INFO     | agents.billing_agent | Billing started — 3 rows
+2026-05-12 10:17:34 | INFO     | agents.billing_agent | Billing complete — 3 cards, $5.00 revenue (tier $3: 1, tier $1: 2)
+2026-05-12 10:17:34 | INFO     | pipeline | Sending daily card alert
+2026-05-12 10:17:34 | INFO     | agents.notification_agent | Daily notification started
+2026-05-12 10:17:36 | DEBUG    | agents.notification_agent | Slack message sent to C0B2WNRNLDP (ts: 1778577456.462799)
+2026-05-12 10:17:36 | INFO     | agents.notification_agent | Daily card summary posted to C0B2WNRNLDP
+2026-05-12 10:17:36 | INFO     | pipeline | ============================================================
+2026-05-12 10:17:36 | INFO     | pipeline | DAILY RUN COMPLETED in 6.1 seconds
+2026-05-12 10:17:36 | INFO     | pipeline | ============================================================
+2026-05-12 10:22:36 | INFO     | pipeline | ============================================================
+2026-05-12 10:22:36 | INFO     | pipeline | DAILY RUN STARTED
+2026-05-12 10:22:36 | INFO     | pipeline | ============================================================
+2026-05-12 10:22:37 | INFO     | pipeline | Ingestion (attempt 1/3)
+2026-05-12 10:22:37 | INFO     | agents.ingestion_agent | Fetching data from Google Sheet ID: 12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+2026-05-12 10:22:50 | INFO     | agents.ingestion_agent | Successfully fetched 11705 rows from Google Sheet ID: 12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+2026-05-12 10:22:50 | INFO     | agents.ingestion_agent | Data loaded successfully from Google Drive
+2026-05-12 10:22:50 | INFO     | agents.ingestion_agent | Raw rows loaded: 11705
+2026-05-12 10:22:50 | DEBUG    | agents.ingestion_agent | Columns after standardisation: ['card_id', 'created_at', 'card_limit', 'is_real_ten_thousand_card', 'card_name', 'maintenance_fee_amount', 'merchant_name']
+2026-05-12 10:22:50 | INFO     | agents.ingestion_agent | Deduplication: 0 duplicates removed, 11705 rows remain
+2026-05-12 10:22:50 | INFO     | pipeline | Validation
+2026-05-12 10:22:50 | INFO     | agents.validation_agent | Validation started — 11705 rows to check
+2026-05-12 10:22:52 | INFO     | agents.validation_agent | No validation errors found
+2026-05-12 10:22:52 | INFO     | agents.validation_agent | Validation passed — 11705 valid rows
+2026-05-12 10:22:52 | INFO     | pipeline | Computing card stats
+2026-05-12 10:22:52 | INFO     | agents.billing_agent | Billing started — 11705 rows
+2026-05-12 10:22:52 | INFO     | agents.billing_agent | Billing complete — 11705 cards, $30771.00 revenue (tier $3: 9533, tier $1: 2172)
+2026-05-12 10:22:52 | INFO     | pipeline | Sending daily card alert
+2026-05-12 10:22:52 | INFO     | agents.notification_agent | Daily notification started
+2026-05-12 10:22:53 | DEBUG    | agents.notification_agent | Slack message sent to C0B2WNRNLDP (ts: 1778577773.921499)
+2026-05-12 10:22:53 | INFO     | agents.notification_agent | Daily card summary posted to C0B2WNRNLDP
+2026-05-12 10:22:53 | INFO     | pipeline | ============================================================
+2026-05-12 10:22:53 | INFO     | pipeline | DAILY RUN COMPLETED in 17.1 seconds
+2026-05-12 10:22:53 | INFO     | pipeline | ============================================================
+2026-05-12 10:25:50 | INFO     | pipeline | ============================================================
+2026-05-12 10:25:50 | INFO     | pipeline | DAILY RUN STARTED
+2026-05-12 10:25:50 | INFO     | pipeline | ============================================================
+2026-05-12 10:25:50 | INFO     | pipeline | Ingestion (attempt 1/3)
+2026-05-12 10:25:50 | INFO     | agents.ingestion_agent | Fetching data from Google Sheet ID: 12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+2026-05-12 10:25:56 | INFO     | agents.ingestion_agent | Successfully fetched 11705 rows from Google Sheet ID: 12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+2026-05-12 10:25:56 | INFO     | agents.ingestion_agent | Data loaded successfully from Google Drive
+2026-05-12 10:25:56 | INFO     | agents.ingestion_agent | Raw rows loaded: 11705
+2026-05-12 10:25:56 | DEBUG    | agents.ingestion_agent | Columns after standardisation: ['card_id', 'created_at', 'card_limit', 'is_real_ten_thousand_card', 'card_name', 'maintenance_fee_amount', 'merchant_name']
+2026-05-12 10:25:56 | INFO     | agents.ingestion_agent | Deduplication: 0 duplicates removed, 11705 rows remain
+2026-05-12 10:25:56 | INFO     | pipeline | Validation
+2026-05-12 10:25:56 | INFO     | agents.validation_agent | Validation started — 11705 rows to check
+2026-05-12 10:25:59 | INFO     | agents.validation_agent | No validation errors found
+2026-05-12 10:25:59 | INFO     | agents.validation_agent | Validation passed — 11705 valid rows
+2026-05-12 10:25:59 | INFO     | pipeline | Computing card stats
+2026-05-12 10:25:59 | INFO     | agents.billing_agent | Billing started — 11705 rows
+2026-05-12 10:25:59 | INFO     | agents.billing_agent | Billing complete — 11705 cards, $30771.00 revenue (tier $3: 9533, tier $1: 2172)
+2026-05-12 10:25:59 | INFO     | pipeline | Sending daily card alert
+2026-05-12 10:25:59 | INFO     | agents.notification_agent | Daily notification started
+2026-05-12 10:26:00 | DEBUG    | agents.notification_agent | Slack message sent to C0B2WNRNLDP (ts: 1778577960.471069)
+2026-05-12 10:26:00 | INFO     | agents.notification_agent | Daily card summary posted to C0B2WNRNLDP
+2026-05-12 10:26:00 | INFO     | pipeline | ============================================================
+2026-05-12 10:26:00 | INFO     | pipeline | DAILY RUN COMPLETED in 10.0 seconds
+2026-05-12 10:26:00 | INFO     | pipeline | ============================================================
+2026-05-12 10:31:53 | INFO     | pipeline | ============================================================
+2026-05-12 10:31:53 | INFO     | pipeline | DAILY RUN STARTED
+2026-05-12 10:31:53 | INFO     | pipeline | ============================================================
+2026-05-12 10:31:54 | INFO     | pipeline | Ingestion (attempt 1/3)
+2026-05-12 10:31:54 | INFO     | agents.ingestion_agent | Fetching data from Google Sheet ID: 12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+2026-05-12 10:31:59 | INFO     | agents.ingestion_agent | Successfully fetched 11705 rows from Google Sheet ID: 12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+2026-05-12 10:31:59 | INFO     | agents.ingestion_agent | Data loaded successfully from Google Drive
+2026-05-12 10:31:59 | INFO     | agents.ingestion_agent | Raw rows loaded: 11705
+2026-05-12 10:31:59 | DEBUG    | agents.ingestion_agent | Columns after standardisation: ['card_id', 'created_at', 'card_limit', 'is_real_ten_thousand_card', 'card_name', 'maintenance_fee_amount', 'merchant_name']
+2026-05-12 10:31:59 | INFO     | agents.ingestion_agent | Deduplication: 0 duplicates removed, 11705 rows remain
+2026-05-12 10:31:59 | INFO     | pipeline | Validation
+2026-05-12 10:31:59 | INFO     | agents.validation_agent | Validation started — 11705 rows to check
+2026-05-12 10:32:02 | INFO     | agents.validation_agent | No validation errors found
+2026-05-12 10:32:02 | INFO     | agents.validation_agent | Validation passed — 11705 valid rows
+2026-05-12 10:32:02 | INFO     | pipeline | Computing card stats
+2026-05-12 10:32:02 | INFO     | agents.billing_agent | Billing started — 11705 rows
+2026-05-12 10:32:02 | INFO     | agents.billing_agent | Billing complete — 11705 cards, $30771.00 revenue (tier $3: 9533, tier $1: 2172)
+2026-05-12 10:32:02 | INFO     | pipeline | Sending daily card alert
+2026-05-12 10:32:02 | INFO     | agents.notification_agent | Daily notification started
+2026-05-12 10:32:03 | DEBUG    | agents.notification_agent | Slack message sent to C0B2WNRNLDP (ts: 1778578324.273709)
+2026-05-12 10:32:03 | INFO     | agents.notification_agent | Daily card summary posted to C0B2WNRNLDP
+2026-05-12 10:32:03 | INFO     | pipeline | ============================================================
+2026-05-12 10:32:03 | INFO     | pipeline | DAILY RUN COMPLETED in 10.0 seconds
+2026-05-12 10:32:03 | INFO     | pipeline | ============================================================
+2026-05-12 10:34:29 | INFO     | pipeline | ============================================================
+2026-05-12 10:34:29 | INFO     | pipeline | DAILY RUN STARTED
+2026-05-12 10:34:29 | INFO     | pipeline | ============================================================
+2026-05-12 10:34:29 | INFO     | pipeline | Ingestion (attempt 1/3)
+2026-05-12 10:34:29 | INFO     | agents.ingestion_agent | Fetching data from Google Sheet ID: 12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+2026-05-12 10:34:34 | INFO     | agents.ingestion_agent | Successfully fetched 11705 rows from Google Sheet ID: 12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+2026-05-12 10:34:34 | INFO     | agents.ingestion_agent | Data loaded successfully from Google Drive
+2026-05-12 10:34:34 | INFO     | agents.ingestion_agent | Raw rows loaded: 11705
+2026-05-12 10:34:34 | DEBUG    | agents.ingestion_agent | Columns after standardisation: ['card_id', 'created_at', 'card_limit', 'is_real_ten_thousand_card', 'card_name', 'maintenance_fee_amount', 'merchant_name']
+2026-05-12 10:34:34 | INFO     | agents.ingestion_agent | Deduplication: 0 duplicates removed, 11705 rows remain
+2026-05-12 10:34:34 | INFO     | pipeline | Validation
+2026-05-12 10:34:34 | INFO     | agents.validation_agent | Validation started — 11705 rows to check
+2026-05-12 10:34:36 | INFO     | agents.validation_agent | No validation errors found
+2026-05-12 10:34:36 | INFO     | agents.validation_agent | Validation passed — 11705 valid rows
+2026-05-12 10:34:36 | INFO     | pipeline | Computing card stats
+2026-05-12 10:34:37 | INFO     | agents.billing_agent | Billing started — 11705 rows
+2026-05-12 10:34:37 | INFO     | agents.billing_agent | Billing complete — 11705 cards, $30771.00 revenue (tier $3: 9533, tier $1: 2172)
+2026-05-12 10:34:37 | INFO     | pipeline | Sending daily card alert
+2026-05-12 10:34:37 | INFO     | agents.notification_agent | Daily notification started
+2026-05-12 10:34:39 | DEBUG    | agents.notification_agent | Slack message sent to C0B2WNRNLDP (ts: 1778578479.500269)
+2026-05-12 10:34:39 | INFO     | agents.notification_agent | Daily card summary posted to C0B2WNRNLDP
+2026-05-12 10:34:39 | INFO     | pipeline | ============================================================
+2026-05-12 10:34:39 | INFO     | pipeline | DAILY RUN COMPLETED in 10.1 seconds
+2026-05-12 10:34:39 | INFO     | pipeline | ============================================================
+2026-05-12 10:46:56 | INFO     | pipeline | ============================================================
+2026-05-12 10:46:56 | INFO     | pipeline | DAILY RUN STARTED
+2026-05-12 10:46:56 | INFO     | pipeline | ============================================================
+2026-05-12 10:46:57 | INFO     | pipeline | Ingestion (attempt 1/3, full_load=False)
+2026-05-12 10:46:57 | INFO     | agents.ingestion_agent | Scanning Google Drive folder 13bseNGXVAy9A7j8ky4ecdHdQXKahc_AO for latest file to append
+2026-05-12 10:47:06 | INFO     | agents.ingestion_agent | No files found in Drive folder.
+2026-05-12 10:47:06 | INFO     | agents.ingestion_agent | No new Drive file found. Falling back to local scanning or Master Sheet.
+2026-05-12 10:47:06 | INFO     | agents.ingestion_agent | Selected local file: data/input\test_accounts.xlsx
+2026-05-12 10:47:06 | INFO     | pipeline | Validation
+2026-05-12 10:47:06 | INFO     | agents.validation_agent | Validation started — 3 rows to check
+2026-05-12 10:47:06 | INFO     | agents.validation_agent | No validation errors found
+2026-05-12 10:47:06 | INFO     | agents.validation_agent | Validation passed — 3 valid rows
+2026-05-12 10:47:06 | INFO     | pipeline | Computing card stats
+2026-05-12 10:47:07 | INFO     | agents.billing_agent | Billing started — 3 rows
+2026-05-12 10:47:07 | INFO     | agents.billing_agent | Billing complete — 3 cards, $5.00 revenue (tier $3: 1, tier $1: 2)
+2026-05-12 10:47:07 | INFO     | pipeline | Sending daily card alert
+2026-05-12 10:47:07 | INFO     | agents.notification_agent | Daily notification started
+2026-05-12 10:47:07 | DEBUG    | agents.notification_agent | Slack message sent to C0B2WNRNLDP (ts: 1778579228.339439)
+2026-05-12 10:47:07 | INFO     | agents.notification_agent | Daily card summary posted to C0B2WNRNLDP
+2026-05-12 10:47:07 | INFO     | pipeline | ============================================================
+2026-05-12 10:47:07 | INFO     | pipeline | DAILY RUN COMPLETED in 11.4 seconds
+2026-05-12 10:47:07 | INFO     | pipeline | ============================================================
+2026-05-12 10:48:30 | INFO     | pipeline | ============================================================
+2026-05-12 10:48:30 | INFO     | pipeline | DAILY RUN STARTED
+2026-05-12 10:48:30 | INFO     | pipeline | ============================================================
+2026-05-12 10:48:31 | INFO     | pipeline | Ingestion (attempt 1/3, full_load=False)
+2026-05-12 10:48:31 | INFO     | agents.ingestion_agent | Scanning Google Drive folder 13bseNGXVAy9A7j8ky4ecdHdQXKahc_AO for latest file to append
+2026-05-12 10:48:33 | INFO     | agents.ingestion_agent | No files found in Drive folder.
+2026-05-12 10:48:33 | INFO     | agents.ingestion_agent | Fetching full live data from Master Google Sheet.
+2026-05-12 10:48:33 | INFO     | agents.ingestion_agent | Fetching data from Google Sheet ID: 12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+2026-05-12 10:48:38 | INFO     | pipeline | Validation
+2026-05-12 10:48:38 | INFO     | agents.validation_agent | Validation started — 11705 rows to check
+2026-05-12 10:48:41 | INFO     | agents.validation_agent | No validation errors found
+2026-05-12 10:48:41 | INFO     | agents.validation_agent | Validation passed — 11705 valid rows
+2026-05-12 10:48:41 | INFO     | pipeline | Computing card stats
+2026-05-12 10:48:41 | INFO     | agents.billing_agent | Billing started — 11705 rows
+2026-05-12 10:48:41 | INFO     | agents.billing_agent | Billing complete — 11705 cards, $30771.00 revenue (tier $3: 9533, tier $1: 2172)
+2026-05-12 10:48:41 | INFO     | pipeline | Sending daily card alert
+2026-05-12 10:48:41 | INFO     | agents.notification_agent | Daily notification started
+2026-05-12 10:48:42 | DEBUG    | agents.notification_agent | Slack message sent to C0B2WNRNLDP (ts: 1778579322.708719)
+2026-05-12 10:48:42 | INFO     | agents.notification_agent | Daily card summary posted to C0B2WNRNLDP
+2026-05-12 10:48:42 | INFO     | pipeline | ============================================================
+2026-05-12 10:48:42 | INFO     | pipeline | DAILY RUN COMPLETED in 11.7 seconds
+2026-05-12 10:48:42 | INFO     | pipeline | ============================================================

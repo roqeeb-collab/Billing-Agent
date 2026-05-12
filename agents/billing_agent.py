@@ -46,8 +46,10 @@ def run(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         "total_revenue": total_revenue,
         "avg_months": round(float(df["months_active"].mean()), 2),
         "breakdown": {
-            "tier_3_dollar": tier_3_count,
-            "tier_1_dollar": tier_1_count,
+            "tier_3_count": tier_3_count,
+            "tier_3_revenue": tier_3_count * FEE_HIGH,
+            "tier_1_count": tier_1_count,
+            "tier_1_revenue": tier_1_count * FEE_LOW,
         },
         "daily": {
             "new_today": new_today,

@@ -50,15 +50,13 @@ def run_daily(billing_summary):
     if not client:
         return
 
-    daily = billing_summary.get("daily", {})
     daily_msg = (
-        ":bar_chart: *Daily Card Summary*\n"
-        f"• New cards created today: {daily.get('new_today', 0)}\n"
-        f"• New cards this week: {daily.get('new_this_week', 0)}\n"
-        f"• New cards this month: {daily.get('new_this_month', 0)}\n"
-        f"• Total active cards: {billing_summary['total_cards']}\n"
-        f"• Cards ≤ 3 months old: {billing_summary['breakdown']['tier_3_dollar']}\n"
-        f"• Cards > 3 months old: {billing_summary['breakdown']['tier_1_dollar']}"
+        ":moneybag: *Daily Billing Summary*\n"
+        f"• Total cards: {billing_summary['total_cards']:,}\n"
+        f"• Total revenue: ${billing_summary['total_revenue']:,.2f}\n"
+        f"• Avg months active: {billing_summary['avg_months']:.1f}\n"
+        f"• Tier $3: {billing_summary['breakdown']['tier_3_count']:,} (${billing_summary['breakdown']['tier_3_revenue']:,.2f})\n"
+        f"• Tier $1: {billing_summary['breakdown']['tier_1_count']:,} (${billing_summary['breakdown']['tier_1_revenue']:,.2f})"
     )
     _post_message(client, SLACK_CHANNEL, daily_msg)
 
@@ -76,11 +74,11 @@ def run_monthly(billing_summary, recon_summary, report_paths):
     # --- Billing summary ---
     billing_msg = (
         ":moneybag: *Billing Summary*\n"
-        f"• Total cards: {billing_summary['total_cards']}\n"
-        f"• Total revenue: ${billing_summary['total_revenue']:.2f}\n"
-        f"• Avg months active: {billing_summary['avg_months']}\n"
-        f"• Tier $3: {billing_summary['breakdown']['tier_3_dollar']}\n"
-        f"• Tier $1: {billing_summary['breakdown']['tier_1_dollar']}"
+        f"• Total cards: {billing_summary['total_cards']:,}\n"
+        f"• Total revenue: ${billing_summary['total_revenue']:,.2f}\n"
+        f"• Avg months active: {billing_summary['avg_months']:.1f}\n"
+        f"• Tier $3: {billing_summary['breakdown']['tier_3_count']:,} (${billing_summary['breakdown']['tier_3_revenue']:,.2f})\n"
+        f"• Tier $1: {billing_summary['breakdown']['tier_1_count']:,} (${billing_summary['breakdown']['tier_1_revenue']:,.2f})"
     )
     _post_message(client, SLACK_CHANNEL, billing_msg)
 

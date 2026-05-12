@@ -36,13 +36,14 @@ def _slack_alert(message):
         log.error("Failed to send Slack alert: %s", exc)
 
 
-def _ingest_with_retry():
-    """Run ingestion with up to 3 retries."""
+def _ingest_with_retry(mode):
+    """Run ingestion with up to 3 retries. Mode is 'daily' or 'monthly'."""
     from agents import ingestion_agent
+    full_load = (mode == "monthly")
     for attempt in range(1, 4):
         try:
-            log.info("Ingestion (attempt %d/3)", attempt)
-            return ingestion_agent.run()
+            log.info("Ingestion (attempt %d/3, full_load=%s)", attempt, full_load)
+            return ingestion_agent.run(force_full_load=full_load)
         except Exception as exc:
             log.error("Ingestion attempt %d failed: %s", attempt, exc)
             if attempt == 3:
@@ -61,7 +62,7 @@ def run_daily():
     start = time.time()
 
     # Ingest
-    df = _ingest_with_retry()
+    df = _ingest_with_retry("daily")
 
     # Validate
     try:
@@ -113,7 +114,7 @@ def run_monthly():
     start = time.time()
 
     # Stage 1: Ingestion
-    df = _ingest_with_retry()
+    df = _ingest_with_retry("monthly")
 
     # Stage 2: Validation
     try:
