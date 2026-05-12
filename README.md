@@ -49,9 +49,11 @@ SLACK_CHANNEL=#billing-alerts
 ATTACH_REPORTS=true
 ```
 
-### 2. Google Sheets Configuration (For Reconciliation)
-The `reconciliation_agent` requires access to a Google Sheet via the Google Sheets API. You must provide a service account JSON file.
+### 2. Google Drive & Sheets Configuration
+Used for ingesting files from Drive and reconciling against a Google Sheet or Excel mastersheet on Drive.
 ```env
+GOOGLE_DRIVE_DAILY_FOLDER_ID=your-google-drive-folder-id
+GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID=your-google-drive-mastersheet-folder-id
 GOOGLE_SHEET_ID=your-google-sheet-id
 GOOGLE_SHEET_TAB_NAME=Sheet1
 GOOGLE_SERVICE_ACCOUNT_FILE=credentials.json
