@@ -86,3 +86,13 @@ def run(
 
     log.info("Reporting complete — 2 reports written to %s", OUTPUT_FOLDER)
     return billing_path, recon_path
+
+
+def generate_tier_1_report(df_tier_1: pd.DataFrame) -> str:
+    """Generate a specific report for Tier 1 cards ($1.00 debit list)."""
+    log.info("Generating Tier 1 Debit Report")
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    datestamp = datetime.today().strftime("%Y%m%d")
+    filepath = os.path.join(OUTPUT_FOLDER, f"tier_1_debit_list_{datestamp}.xlsx")
+    _write_formatted_xlsx(df_tier_1, filepath)
+    return filepath

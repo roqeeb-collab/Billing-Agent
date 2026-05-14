@@ -93,13 +93,21 @@ def run_daily():
         log.critical(msg)
         sys.exit(1)
 
-    # Send daily notification only
+    # Send daily notification with optional Tier 1 report
     try:
-        log.info("Sending daily card alert")
-        from agents import notification_agent
-        notification_agent.run_daily(billing_summary)
+        log.info("Generating and sending daily reports")
+        from agents import reporting_agent, notification_agent
+        
+        report_paths = []
+        df_tier_1 = df[df["fee"] == 1.00]
+        if not df_tier_1.empty:
+            log.info("Found %d Tier 1 cards — generating debit report", len(df_tier_1))
+            path = reporting_agent.generate_tier_1_report(df_tier_1)
+            report_paths.append(path)
+            
+        notification_agent.run_daily(billing_summary, report_paths=report_paths)
     except Exception as exc:
-        msg = f"Daily notification failed: {exc}"
+        msg = f"Daily notification/reporting failed: {exc}"
         _slack_alert(msg)
         log.critical(msg)
         sys.exit(1)

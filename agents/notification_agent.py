@@ -42,10 +42,10 @@ def _upload_file(client, channel, filepath, title):
     log.debug("Uploaded %s to %s", filepath, channel)
 
 
-def run_daily(billing_summary):
+def run_daily(billing_summary, report_paths=None):
     """Send daily card summary alert when a new file is uploaded."""
     log.info("Daily notification started")
-
+    
     client = _get_client()
     if not client:
         return
@@ -67,6 +67,12 @@ def run_daily(billing_summary):
         f"• Tier $1: {billing_summary['breakdown']['tier_1_count']:,} (${billing_summary['breakdown']['tier_1_revenue']:,.2f})"
     )
     _post_message(client, SLACK_CHANNEL, daily_msg)
+
+    # Attach reports if provided (e.g., Tier 1 Debit List)
+    if ATTACH_REPORTS and report_paths:
+        for path in report_paths:
+            if os.path.isfile(path):
+                _upload_file(client, SLACK_CHANNEL, path, "Daily Report Attachment")
 
     log.info("Daily card summary posted to %s", SLACK_CHANNEL)
 
