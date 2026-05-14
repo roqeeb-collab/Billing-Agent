@@ -35,11 +35,20 @@ def _post_message(client, channel, text):
 
 
 def _upload_file(client, channel, filepath, title):
-    client.files_upload_v2(
-        channel=channel, file=filepath, title=title,
-        filename=os.path.basename(filepath),
-    )
-    log.debug("Uploaded %s to %s", filepath, channel)
+    import time
+    for attempt in range(1, 4):
+        try:
+            client.files_upload_v2(
+                channel=channel, file=filepath, title=title,
+                filename=os.path.basename(filepath),
+            )
+            log.debug("Uploaded %s to %s", filepath, channel)
+            return
+        except Exception as e:
+            if attempt == 3:
+                raise e
+            log.warning("Slack upload attempt %d failed (%s). Retrying in 5 seconds...", attempt, e)
+            time.sleep(5)
 
 
 def run_daily(billing_summary, report_paths=None):
