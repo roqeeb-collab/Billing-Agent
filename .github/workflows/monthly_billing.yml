@@ -36,4 +36,5 @@ jobs:
           GOOGLE_SHEET_TAB_NAME: ${{ vars.GOOGLE_SHEET_TAB_NAME || 'Sheet1' }}
           GOOGLE_SERVICE_ACCOUNT_FILE: credentials.json
           ATTACH_REPORTS: "true"
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
         run: python main.py --mode monthly
