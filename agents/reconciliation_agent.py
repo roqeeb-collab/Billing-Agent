@@ -103,16 +103,9 @@ def run(df: pd.DataFrame) -> dict:
         except Exception as e:
             log.error("Failed to process reference mastersheet: %s", e)
     
-    # Priority 2: Fall back to Live Google Sheet if no reference was found
-    if not sheet_ids and GOOGLE_SHEET_ID:
-        log.info("No reference file found. Using Live Google Sheet ID: %s", GOOGLE_SHEET_ID)
-        try:
-            sheet_ids = _fetch_sheet_card_ids(GOOGLE_SHEET_ID, GOOGLE_SHEET_TAB)
-        except Exception as exc:
-            log.warning("Live Google Sheets API error: %s", exc)
-    
+    # Skip if no reference file was found in the folder
     if not sheet_ids:
-        log.warning("No mastersheet data found — skipping reconciliation")
+        log.warning("No reference file found in Drive folder — skipping reconciliation as requested.")
         return {"deleted": [], "missing": [], "matched": 0, "skipped": True}
 
     billing_ids = set(df["card_id"].astype(str).str.strip())
