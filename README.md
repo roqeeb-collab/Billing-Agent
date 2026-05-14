@@ -1,102 +1,76 @@
 # Billing Agent Pipeline
 
 ## Overview
-The Billing Agent Pipeline is an automated, multi-stage Python orchestrator designed to handle daily and monthly billing workflows. It ingests data, validates records, computes billing statistics, reconciles accounts, generates reports, and sends automated notifications (e.g., via Slack).
+The Billing Agent Pipeline is an automated, multi-stage Python orchestrator designed to handle daily and monthly billing workflows. It connects your live data from **Google Sheets** and **Google Drive** to **Slack**, providing real-time billing updates and automated reconciliation.
 
-## Features
-- **Daily Mode**: Ingests new files, computes daily card statistics, and sends a daily alert to Slack.
-- **Monthly Mode**: Executes a complete 6-stage pipeline:
-  1. **Ingestion**: Fetches and loads data with automatic retries.
-  2. **Validation**: Ensures data integrity; halts the pipeline if validation thresholds are breached.
-  3. **Billing**: Computes detailed billing summaries and statistics.
-  4. **Reconciliation**: Cross-checks and reconciles billing accounts.
-  5. **Reporting**: Generates standardized output reports (e.g., Excel files).
-  6. **Notification**: Dispatches comprehensive monthly summaries and alerts via Slack.
+---
 
-## Prerequisites
+## 🚀 Key Features
+
+### 1. Smart Billing Rules
+- **Tiered Pricing**: Automatically calculates fees based on card age.
+    - **Tier $3.00**: Cards active for 3 months or less.
+    - **Tier $1.00**: Cards active for more than 3 months.
+- **Automated Debit Lists**: Generates an Excel report specifically for the $1.00 Tier cards during daily runs, facilitating easy monthly debits.
+
+### 2. Live Data Integration
+- **Delta Ingestion**: Daily runs automatically identify and process only **newly added records** from your Google Drive folder.
+- **Duplicate Prevention**: Cross-checks every new card against your Master Sheet to ensure no duplicate entries.
+- **Google Sheets Reconciliation**: Supports monthly cross-checks between your live data and an end-of-month reference Google Sheet or Excel file.
+
+### 3. Fully Automated Workflows (GitHub Actions)
+- **Daily Summary**: Runs every **30 minutes** to check for new files. If new data is found, it sends a summary to Slack with a daily breakdown of cards and revenue.
+- **Monthly Audit**: Runs at **1:00 AM on the 1st of every month** to perform a full reconciliation and generate portfolio-wide reports.
+
+---
+
+## 🛠 Operation Modes
+
+### 📅 Daily Mode (`--mode daily`)
+Focuses on processing incoming files and keeping you updated on the latest activity.
+- **Ingestion**: Scans Drive for the latest upload.
+- **Delta Processing**: Returns only the records that aren't already in your Master Sheet.
+- **Daily Breakdown**: Slack message includes a chronological breakdown of cards created and revenue generated.
+- **Tier 1 Reporting**: Attaches a `tier_1_debit_list.xlsx` if any mature cards ($1 tier) are detected.
+
+### 📊 Monthly Mode (`--mode monthly`)
+The full 6-stage audit and reconciliation pipeline.
+1. **Full Ingestion**: Loads the entire Master Sheet portfolio.
+2. **Validation**: Checks all 1,400+ records for integrity.
+3. **Billing**: Computes full revenue stats for the entire history.
+4. **Reconciliation**: Compares the Live Master Sheet against a reference Google Sheet/Excel on Drive.
+5. **Reporting**: Generates full Billing and Reconciliation Excel reports.
+6. **Notification**: Posts the full audit summary and reports to Slack.
+
+---
+
+## ⚙️ Installation & Setup
+
+### 1. Requirements
 - Python 3.12+
-- A `.env` file containing necessary environment variables (e.g., Slack tokens, credentials).
+- Google Cloud Service Account with access to Sheets and Drive.
+- Slack Bot with `chat:write` and `files:write` permissions.
 
-## Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/roqeeb-collab/Billing-Agent.git
-   cd Billing-Agent
-   ```
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv .venv
-   
-   # On Windows use:
-   .venv\Scripts\activate
-   
-   # On macOS/Linux use:
-   source .venv/bin/activate
-   ```
-3. Install the dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## Configuration
-Before running the pipeline, several configurations must be set up. Create a `.env` file in the root directory of the project with the following required variables:
-
-### 1. Slack Integration (Required)
-Used by the `notification_agent` to send alerts and reports.
+### 2. Configuration
+Create a `.env` file with the following:
 ```env
-SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
-SLACK_CHANNEL=#billing-alerts
-ATTACH_REPORTS=true
+SLACK_BOT_TOKEN=xoxb-your-token
+SLACK_CHANNEL=C0B2WNRNLDP
+GOOGLE_SHEET_ID=12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk
+GOOGLE_DRIVE_DAILY_FOLDER_ID=13bseNGXVAy9A7j8ky4ecdHdQXKahc_AO
+GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID=1dJr5YlARLZqzEa0jwePEjlkGQsLKieM-
 ```
 
-### 2. Google Drive & Sheets Configuration
-Used for ingesting files from Drive and reconciling against a Google Sheet or Excel mastersheet on Drive.
-```env
-GOOGLE_DRIVE_DAILY_FOLDER_ID=your-google-drive-folder-id
-GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID=your-google-drive-mastersheet-folder-id
-GOOGLE_SHEET_ID=your-google-sheet-id
-GOOGLE_SHEET_TAB_NAME=Sheet1
-GOOGLE_SERVICE_ACCOUNT_FILE=credentials.json
-```
-**Google Credentials Setup:**
-- Go to the [Google Cloud Console](https://console.cloud.google.com/).
-- Enable the **Google Sheets API** and **Google Drive API**.
-- Create a **Service Account** and generate a JSON key.
-- Save the JSON key in the root directory as `credentials.json` (or update `GOOGLE_SERVICE_ACCOUNT_FILE` with its path).
-- *Important:* Share your target Google Sheet with the email address of the generated Service Account.
+### 3. GitHub Actions Setup
+To enable the automated runs:
+1. Push this code to your repository.
+2. Add `GOOGLE_CREDENTIALS` (content of `credentials.json`) to your GitHub **Repository Secrets**.
+3. Add `SLACK_BOT_TOKEN` to your GitHub **Repository Secrets**.
 
-### 3. Data Folders
-These specify where the pipeline should look for incoming files and where it should save generated reports.
-```env
-INPUT_FOLDER=data/input
-OUTPUT_FOLDER=data/output
-```
+---
 
-*(Note: Make sure your `.env` and `credentials.json` files are never committed to version control. They are already included in the `.gitignore`.)*
-
-## Usage
-Run the pipeline orchestrator using the `main.py` script. You can specify the operational mode using the `--mode` argument.
-
-### Daily Run
-Executes the daily flow (ingestion, validation, basic billing stats computation, and daily Slack alert):
-```bash
-python main.py --mode daily
-```
-
-### Monthly Run (Default)
-Executes the full, exhaustive 6-stage end-to-end pipeline:
-```bash
-python main.py --mode monthly
-```
-*(You can also simply run `python main.py` as `monthly` is the default mode)*
-
-## Architecture
-The pipeline is designed with modularity in mind, utilizing dedicated "agents" for each specific task located in the `agents/` directory:
-- `ingestion_agent.py` - Handles data loading and extraction.
-- `validation_agent.py` - Ensures data quality and structural integrity.
-- `billing_agent.py` - Performs core billing calculations.
-- `reconciliation_agent.py` - Identifies discrepancies and reconciles records.
-- `reporting_agent.py` - Formats data into exportable final reports.
-- `notification_agent.py` - Manages dispatching of alerts and summaries to external platforms.
-
-This modular structure ensures separation of concerns, making the pipeline robust and easily extensible.
+## 📁 Project Structure
+- `agents/` - Modular agents for Ingestion, Billing, Reconciliation, etc.
+- `.github/workflows/` - Automation schedules (Daily check and Monthly audit).
+- `data/` - Temporary local storage for processing (Ignored by Git).
+- `main.py` - Core orchestrator for all modes.
