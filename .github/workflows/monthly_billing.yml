@@ -1,0 +1,39 @@
+name: Monthly Billing & Reconciliation
+
+on:
+  schedule:
+    # Runs at 01:00 AM on the 1st of every month
+    - cron: '0 1 * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  run-monthly-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create credentials.json
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
+
+      - name: Run Monthly Pipeline
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ vars.SLACK_CHANNEL || 'C0B2WNRNLDP' }}
+          GOOGLE_DRIVE_DAILY_FOLDER_ID: ${{ vars.GOOGLE_DRIVE_DAILY_FOLDER_ID || '13bseNGXVAy9A7j8ky4ecdHdQXKahc_AO' }}
+          GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID: ${{ vars.GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID || '1dJr5YlARLZqzEa0jwePEjlkGQsLKieM-' }}
+          GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID || '12ieqW7Pg8TUEnc1XaAadS_WPH_6KCRdIm52E8FwQ9lk' }}
+          GOOGLE_SHEET_TAB_NAME: ${{ vars.GOOGLE_SHEET_TAB_NAME || 'Sheet1' }}
+          GOOGLE_SERVICE_ACCOUNT_FILE: credentials.json
+          ATTACH_REPORTS: "true"
+        run: python main.py --mode monthly
