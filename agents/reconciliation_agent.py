@@ -14,13 +14,13 @@ GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID = os.environ.get("GOOGLE_DRIVE_MASTERSHEET_FO
 INPUT_FOLDER = os.environ.get("INPUT_FOLDER", "data/input")
 
 
-def _download_mastersheet_from_drive():
-    """Download the latest .xlsx mastersheet from the configured Google Drive folder."""
+def _find_mastersheet_on_drive():
+    """Find the latest .xlsx or Google Sheet mastersheet in the configured Drive folder."""
     if not GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID:
         return None
 
     if not os.path.isfile(SERVICE_ACCOUNT_FILE):
-        log.warning("Service account file '%s' not found — skipping mastersheet download.", SERVICE_ACCOUNT_FILE)
+        log.warning("Service account file '%s' not found.", SERVICE_ACCOUNT_FILE)
         return None
 
     try:
@@ -28,24 +28,26 @@ def _download_mastersheet_from_drive():
         drive = DriveService(SERVICE_ACCOUNT_FILE)
         files = drive.list_files_in_folder(GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID)
         
-        # Filter for .xlsx files
-        xlsx_files = [f for f in files if f['name'].lower().endswith('.xlsx')]
+        # Filter for .xlsx files or Google Sheets
+        valid_files = [
+            f for f in files 
+            if f['name'].lower().endswith('.xlsx') or 
+               f['mimeType'] == 'application/vnd.google-apps.spreadsheet'
+        ]
         
-        if not xlsx_files:
-            log.warning("No .xlsx mastersheet found in Drive folder %s", GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID)
+        if not valid_files:
+            log.warning("No mastersheet (Excel or Google Sheet) found in Drive folder %s", GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID)
             return None
 
-        latest_file = xlsx_files[0]
-        dest_path = os.path.join(INPUT_FOLDER, "mastersheet_" + latest_file['name'])
-        drive.download_file(latest_file['id'], dest_path)
-        return dest_path
+        # Return the latest one
+        return valid_files[0]
     except Exception as e:
-        log.error("Failed to download mastersheet from Drive: %s", e)
+        log.error("Failed to scan Drive for mastersheet: %s", e)
         return None
 
 
-def _fetch_sheet_card_ids() -> set[str]:
-    """Authenticate and pull card_id column from Google Sheets."""
+def _fetch_sheet_card_ids(sheet_id: str, tab_name: str = "Sheet1") -> set[str]:
+    """Authenticate and pull card_id column from a specific Google Sheet."""
     import gspread
     from google.oauth2.service_account import Credentials
 
@@ -55,7 +57,7 @@ def _fetch_sheet_card_ids() -> set[str]:
     ]
     creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
     gc = gspread.authorize(creds)
-    worksheet = gc.open_by_key(GOOGLE_SHEET_ID).worksheet(GOOGLE_SHEET_TAB)
+    worksheet = gc.open_by_key(sheet_id).worksheet(tab_name)
 
     records = worksheet.get_all_records()
     return {str(r.get("card_id", "")).strip() for r in records if r.get("card_id")}
@@ -77,27 +79,40 @@ def _fetch_excel_card_ids(file_path: str) -> set[str]:
 
 
 def run(df: pd.DataFrame) -> dict:
-    """Compare billing card_ids with Mastersheet (either from Drive Excel or Google Sheet)."""
+    """Compare billing card_ids with Mastersheet (either from Drive Excel/Sheet or Live Google Sheet)."""
     log.info("Reconciliation started")
 
     sheet_ids = set()
 
-    # Priority 1: Check for Excel mastersheet on Google Drive
-    excel_path = _download_mastersheet_from_drive()
-    if excel_path:
-        log.info("Using Excel mastersheet from Drive: %s", excel_path)
-        sheet_ids = _fetch_excel_card_ids(excel_path)
-    
-    # Priority 2: Fall back to Google Sheet if no Excel was found but ID is set
-    elif GOOGLE_SHEET_ID:
-        log.info("Using Google Sheet ID: %s", GOOGLE_SHEET_ID)
+    # Priority 1: Check for Reference Mastersheet on Google Drive (Folder 1dJr...)
+    ref_file = _find_mastersheet_on_drive()
+    if ref_file:
+        mime_type = ref_file['mimeType']
+        log.info("Found reference mastersheet on Drive: %s (%s)", ref_file['name'], mime_type)
+        
         try:
-            sheet_ids = _fetch_sheet_card_ids()
+            if mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                # It's an Excel file
+                drive = DriveService(SERVICE_ACCOUNT_FILE)
+                dest_path = os.path.join(INPUT_FOLDER, "mastersheet_" + ref_file['name'])
+                drive.download_file(ref_file['id'], dest_path)
+                sheet_ids = _fetch_excel_card_ids(dest_path)
+            elif mime_type == 'application/vnd.google-apps.spreadsheet':
+                # It's a Google Sheet
+                sheet_ids = _fetch_sheet_card_ids(ref_file['id'], GOOGLE_SHEET_TAB)
+        except Exception as e:
+            log.error("Failed to process reference mastersheet: %s", e)
+    
+    # Priority 2: Fall back to Live Google Sheet if no reference was found
+    if not sheet_ids and GOOGLE_SHEET_ID:
+        log.info("No reference file found. Using Live Google Sheet ID: %s", GOOGLE_SHEET_ID)
+        try:
+            sheet_ids = _fetch_sheet_card_ids(GOOGLE_SHEET_ID, GOOGLE_SHEET_TAB)
         except Exception as exc:
-            log.warning("Google Sheets API error: %s", exc)
+            log.warning("Live Google Sheets API error: %s", exc)
     
     if not sheet_ids:
-        log.warning("No mastersheet data found (Drive Excel or Google Sheet) — skipping reconciliation")
+        log.warning("No mastersheet data found — skipping reconciliation")
         return {"deleted": [], "missing": [], "matched": 0, "skipped": True}
 
     billing_ids = set(df["card_id"].astype(str).str.strip())
