@@ -61,11 +61,31 @@ GOOGLE_DRIVE_DAILY_FOLDER_ID=13bseNGXVAy9A7j8ky4ecdHdQXKahc_AO
 GOOGLE_DRIVE_MASTERSHEET_FOLDER_ID=1dJr5YlARLZqzEa0jwePEjlkGQsLKieM-
 ```
 
-### 3. GitHub Actions Setup
-To enable the automated runs:
-1. Push this code to your repository.
-2. Add `GOOGLE_CREDENTIALS` (content of `credentials.json`) to your GitHub **Repository Secrets**.
-3. Add `SLACK_BOT_TOKEN` to your GitHub **Repository Secrets**.
+## 🚀 Deployment to GitHub Actions
+
+To set up the automation so it runs in the cloud (24/7), follow these steps:
+
+### 1. Push Code to GitHub
+Ensure all your changes are pushed to your repository:
+```bash
+git add .
+git commit -m "Update automation and billing logic"
+git push origin main
+```
+
+### 2. Configure GitHub Secrets
+The pipeline requires your credentials to be stored securely in GitHub.
+1. Navigate to your repository on GitHub.
+2. Go to **Settings** > **Secrets and variables** > **Actions**.
+3. Add the following **Repository Secrets**:
+    - **`GOOGLE_CREDENTIALS`**: Paste the entire content of your `credentials.json` file.
+    - **`SLACK_BOT_TOKEN`**: Paste your Slack Bot Token (`xoxb-...`).
+
+### 3. Verify Automation
+Once the secrets are added:
+1. Go to the **Actions** tab on GitHub.
+2. Select **"Daily Billing Summary"** and click **"Run workflow"** to test the daily check.
+3. Select **"Monthly Billing & Reconciliation"** and click **"Run workflow"** to test the full audit.
 
 ---
 
