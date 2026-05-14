@@ -41,10 +41,35 @@ def run(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     new_this_week = int((df["days_active"] <= 7).sum())
     new_this_month = int((df["days_active"] <= 30).sum())
 
+    # Daily Breakdown (requested by user)
+    # Check if 'date' column exists, otherwise use 'created_at'
+    date_col = "date" if "date" in df.columns else "created_at"
+    
+    # Ensure it's datetime and get the date part
+    temp_df = df.copy()
+    temp_df[date_col] = pd.to_datetime(temp_df[date_col]).dt.date
+    
+    daily_stats = (
+        temp_df.groupby(date_col)
+        .agg(count=("card_id", "count"), revenue=("fee", "sum"))
+        .reset_index()
+    )
+    daily_stats = daily_stats.sort_values(by=date_col, ascending=False)
+    
+    # Convert to list of dicts for the summary
+    daily_breakdown = []
+    for _, row in daily_stats.iterrows():
+        daily_breakdown.append({
+            "date": str(row[date_col]),
+            "count": int(row["count"]),
+            "revenue": float(row["revenue"])
+        })
+
     summary = {
         "total_cards": len(df),
         "total_revenue": total_revenue,
         "avg_months": round(float(df["months_active"].mean()), 2),
+        "daily_breakdown": daily_breakdown,  # New field
         "breakdown": {
             "tier_3_count": tier_3_count,
             "tier_3_revenue": tier_3_count * FEE_HIGH,

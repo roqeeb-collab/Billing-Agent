@@ -11,7 +11,7 @@ mingit.zip
 python_installer.exe
 python_nuget.zip
 python_portable/
-data/output/
+data/
 .vscode/
 test_drive_diag.py
 test_slack_diag.py

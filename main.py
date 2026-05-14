@@ -64,6 +64,10 @@ def run_daily():
     # Ingest
     df = _ingest_with_retry("daily")
 
+    if df.empty:
+        log.info("No new data to process today. Pipeline finishing early.")
+        return
+
     # Validate
     try:
         log.info("Validation")

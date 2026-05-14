@@ -50,9 +50,17 @@ def run_daily(billing_summary):
     if not client:
         return
 
+    breakdown_lines = []
+    for day in billing_summary.get("daily_breakdown", []):
+        breakdown_lines.append(f"  └ {day['date']}: {day['count']} cards (${day['revenue']:,.2f})")
+    
+    breakdown_str = "\n".join(breakdown_lines)
+
     daily_msg = (
         ":moneybag: *Daily Billing Summary*\n"
         f"• Total cards: {billing_summary['total_cards']:,}\n"
+        "*Daily Breakdown:*\n"
+        f"{breakdown_str}\n"
         f"• Total revenue: ${billing_summary['total_revenue']:,.2f}\n"
         f"• Avg months active: {billing_summary['avg_months']:.1f}\n"
         f"• Tier $3: {billing_summary['breakdown']['tier_3_count']:,} (${billing_summary['breakdown']['tier_3_revenue']:,.2f})\n"
