@@ -18,9 +18,9 @@ The Billing Agent Pipeline is an automated, multi-stage Python orchestrator desi
 - **Duplicate Prevention**: Cross-checks every new card against your Master Sheet to ensure no duplicate entries.
 - **Google Sheets Reconciliation**: Supports monthly cross-checks between your live data and an end-of-month reference Google Sheet or Excel file.
 
-### 3. Fully Automated Workflows (GitHub Actions)
-- **Daily Summary**: Runs every **30 minutes** to check for new files. If new data is found, it sends a summary to Slack with a daily breakdown of cards and revenue.
-- **Monthly Audit**: Runs at **1:00 AM on the 1st of every month** to perform a full reconciliation and generate portfolio-wide reports.
+### 3. Fully Automated Workflows
+- **Daily Summary**: Triggered **instantly** via Google Apps Script the moment a file is uploaded to Drive. It sends a summary to Slack with a daily breakdown of cards and revenue.
+- **Monthly Audit**: Runs at **11:00 AM WAT (10:00 AM UTC) on the 1st of every month** to perform a full reconciliation and generate portfolio-wide reports.
 
 ---
 
@@ -81,7 +81,13 @@ The pipeline requires your credentials to be stored securely in GitHub.
     - **`GOOGLE_CREDENTIALS`**: Paste the entire content of your `credentials.json` file.
     - **`SLACK_BOT_TOKEN`**: Paste your Slack Bot Token (`xoxb-...`).
 
-### 3. Verify Automation
+### 3. Set Up Instant Triggers (Optional but Recommended)
+To avoid waiting for GitHub's internal scheduler, you can set up a Google Apps Script to "ping" GitHub the moment a file is uploaded:
+1.  **Generate a GitHub PAT**: Create a Personal Access Token (classic) with `repo` scope.
+2.  **Apps Script**: Create a script at `script.google.com` to monitor your Drive folder and call the GitHub API `dispatches` endpoint.
+3.  **Trigger**: Set a 1-minute time-driven trigger in the Apps Script editor.
+
+### 4. Verify Automation
 Once the secrets are added:
 1. Go to the **Actions** tab on GitHub.
 2. Select **"Daily Billing Summary"** and click **"Run workflow"** to test the daily check.
