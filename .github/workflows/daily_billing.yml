@@ -1,10 +1,7 @@
 name: Daily Billing Summary
 
 on:
-  schedule:
-    # Runs every 30 minutes to check for new files
-    - cron: '*/30 * * * *'
-  workflow_dispatch: # Allows manual triggering for testing
+  workflow_dispatch: # Allows manual triggering or Apps Script "ping"
 
 jobs:
   run-pipeline:
