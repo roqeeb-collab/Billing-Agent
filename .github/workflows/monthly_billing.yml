@@ -2,8 +2,8 @@ name: Monthly Billing & Reconciliation
 
 on:
   schedule:
-    # Runs at 01:00 AM on the 1st of every month
-    - cron: '0 1 * * *'
+    # Runs at 10:00 AM UTC (11:00 AM WAT) on the 1st of every month
+    - cron: '0 10 1 * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
