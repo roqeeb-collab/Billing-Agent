@@ -55,67 +55,75 @@ def _ingest_with_retry(mode):
 
 
 def run_daily():
-    """Daily mode: ingest new file → compute stats → send daily card alert."""
+    """Daily mode: process ALL new files → send a separate Slack alert per file."""
     log.info("=" * 60)
     log.info("DAILY RUN STARTED")
     log.info("=" * 60)
     start = time.time()
 
-    # Ingest
-    df = _ingest_with_retry("daily")
+    # Ingest — returns a list of {"filename": str, "df": DataFrame}
+    file_results = _ingest_with_retry("daily")
 
-    if df.empty:
+    if not file_results:
         log.info("No new data to process today. Pipeline finishing early.")
         return
 
-    # Validate
-    try:
-        log.info("Validation")
-        from agents import validation_agent
-        df = validation_agent.run(df)
-    except ValueError:
-        log.critical("Pipeline halted — validation threshold breached")
-        sys.exit(1)
-    except Exception as exc:
-        msg = f"Validation failed: {exc}"
-        _slack_alert(msg)
-        log.critical(msg)
-        sys.exit(1)
+    log.info("Processing %d new file(s).", len(file_results))
 
-    # Compute billing stats (needed for daily card counts)
-    try:
-        log.info("Computing card stats")
-        from agents import billing_agent
-        df, billing_summary = billing_agent.run(df)
-    except Exception as exc:
-        msg = f"Billing stats failed: {exc}"
-        _slack_alert(msg)
-        log.critical(msg)
-        sys.exit(1)
+    for item in file_results:
+        filename = item["filename"]
+        df = item["df"]
+        log.info("--- Processing file: %s (%d rows) ---", filename, len(df))
 
-    # Send daily notification with optional Tier 1 report
-    try:
-        log.info("Generating and sending daily reports")
-        from agents import reporting_agent, notification_agent
-        
-        report_paths = []
-        df_tier_1 = df[df["fee"] == 1.00]
-        if not df_tier_1.empty:
-            log.info("Found %d Tier 1 cards — generating debit report", len(df_tier_1))
-            path = reporting_agent.generate_tier_1_report(df_tier_1)
-            report_paths.append(path)
-            
-        notification_agent.run_daily(billing_summary, report_paths=report_paths)
-    except Exception as exc:
-        msg = f"Daily notification/reporting failed: {exc}"
-        _slack_alert(msg)
-        log.critical(msg)
-        sys.exit(1)
+        # Validate
+        try:
+            log.info("[%s] Validation", filename)
+            from agents import validation_agent
+            df = validation_agent.run(df)
+        except ValueError:
+            log.critical("[%s] Pipeline halted — validation threshold breached", filename)
+            sys.exit(1)
+        except Exception as exc:
+            msg = f"[{filename}] Validation failed: {exc}"
+            _slack_alert(msg)
+            log.critical(msg)
+            continue  # Skip this file but keep processing the rest
+
+        # Compute billing stats
+        try:
+            log.info("[%s] Computing card stats", filename)
+            from agents import billing_agent
+            df, billing_summary = billing_agent.run(df)
+        except Exception as exc:
+            msg = f"[{filename}] Billing stats failed: {exc}"
+            _slack_alert(msg)
+            log.critical(msg)
+            continue
+
+        # Generate report and send per-file Slack notification
+        try:
+            log.info("[%s] Generating and sending daily report", filename)
+            from agents import reporting_agent, notification_agent
+
+            report_paths = []
+            df_tier_1 = df[df["fee"] == 1.00]
+            if not df_tier_1.empty:
+                log.info("[%s] Found %d Tier 1 cards — generating debit report", filename, len(df_tier_1))
+                path = reporting_agent.generate_tier_1_report(df_tier_1)
+                report_paths.append(path)
+
+            notification_agent.run_daily(billing_summary, report_paths=report_paths)
+        except Exception as exc:
+            msg = f"[{filename}] Daily notification/reporting failed: {exc}"
+            _slack_alert(msg)
+            log.critical(msg)
+            continue
 
     elapsed = time.time() - start
     log.info("=" * 60)
     log.info("DAILY RUN COMPLETED in %.1f seconds", elapsed)
     log.info("=" * 60)
+
 
 
 def run_monthly():

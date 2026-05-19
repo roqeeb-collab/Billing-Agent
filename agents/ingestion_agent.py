@@ -1,5 +1,4 @@
 import os
-import glob
 import pandas as pd
 from logger import get_logger
 from dotenv import load_dotenv
@@ -14,6 +13,14 @@ GOOGLE_SHEET_ID = os.environ.get("GOOGLE_SHEET_ID", "")
 GOOGLE_SHEET_TAB_NAME = os.environ.get("GOOGLE_SHEET_TAB_NAME", "Sheet1")
 SERVICE_ACCOUNT_FILE = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE", "credentials.json")
 
+# Supported MIME types for Drive files
+SUPPORTED_MIME_TYPES = {
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",  # .xlsx
+    "application/vnd.ms-excel.sheet.macroEnabled.12": "xlsm",                    # .xlsm
+    "text/csv": "csv",                                                             # .csv
+    "application/vnd.google-apps.spreadsheet": "gsheet",                          # Google Sheet
+}
+
 
 def _fetch_from_google_sheet(sheet_id):
     """Fetch data from a specific Google Sheet ID."""
@@ -24,7 +31,7 @@ def _fetch_from_google_sheet(sheet_id):
         scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
         creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
         gc = gspread.authorize(creds)
-        
+
         spreadsheet = gc.open_by_key(sheet_id)
         worksheet = spreadsheet.worksheet(GOOGLE_SHEET_TAB_NAME)
         data = worksheet.get_all_records()
@@ -34,53 +41,36 @@ def _fetch_from_google_sheet(sheet_id):
         return None
 
 
-def _download_latest_from_drive():
-    """Fetch the most recent data from Drive (Sheet ID priority, then folder scanning)."""
-    if not os.path.isfile(SERVICE_ACCOUNT_FILE):
-        log.warning("Service account file '%s' not found — skipping Drive ingestion.", SERVICE_ACCOUNT_FILE)
-        return None
+def _read_drive_file(drive, file_meta):
+    """Download and read a Drive file into a DataFrame. Supports xlsx, xlsm, csv, gsheet."""
+    mime_type = file_meta["mimeType"]
+    file_format = SUPPORTED_MIME_TYPES.get(mime_type)
 
-    # Priority 1: Specific Google Sheet ID
-    if GOOGLE_SHEET_ID:
-        df = _fetch_from_google_sheet(GOOGLE_SHEET_ID)
-        if df is not None and not df.empty:
-            log.info("Successfully fetched %d rows from Google Sheet ID: %s", len(df), GOOGLE_SHEET_ID)
-            return df
+    if file_format == "gsheet":
+        return _fetch_from_google_sheet(file_meta["id"])
 
-    # Priority 2: Scan folder for latest file
-    if not GOOGLE_DRIVE_DAILY_FOLDER_ID:
-        return None
+    if file_format in ("xlsx", "xlsm", "csv"):
+        os.makedirs(INPUT_FOLDER, exist_ok=True)
+        dest_path = os.path.join(INPUT_FOLDER, file_meta["name"])
+        drive.download_file(file_meta["id"], dest_path)
 
-    try:
-        log.info("Scanning Google Drive folder %s for latest files", GOOGLE_DRIVE_DAILY_FOLDER_ID)
-        drive = DriveService(SERVICE_ACCOUNT_FILE)
-        files = drive.list_files_in_folder(GOOGLE_DRIVE_DAILY_FOLDER_ID)
-        
-        if not files:
-            log.warning("No files found in Drive folder %s", GOOGLE_DRIVE_DAILY_FOLDER_ID)
-            return None
-
-        latest_file = files[0]
-        mime_type = latest_file['mimeType']
-
-        # Option A: It's an Excel file
-        if mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-            os.makedirs(INPUT_FOLDER, exist_ok=True)
-            dest_path = os.path.join(INPUT_FOLDER, latest_file['name'])
-            drive.download_file(latest_file['id'], dest_path)
+        if file_format in ("xlsx", "xlsm"):
             return pd.read_excel(dest_path, engine="openpyxl")
-        
-        # Option B: It's a Google Sheet
-        elif mime_type == 'application/vnd.google-apps.spreadsheet':
-            return _fetch_from_google_sheet(latest_file['id'])
-        
-        else:
-            log.warning("Latest file '%s' is not a supported spreadsheet type.", latest_file['name'])
-            return None
+        elif file_format == "csv":
+            return pd.read_csv(dest_path)
 
-    except Exception as e:
-        log.error("Failed to scan Drive folder: %s", e)
-        return None
+    log.warning("Unsupported file type '%s' for file '%s' — skipping.", mime_type, file_meta["name"])
+    return None
+
+
+def _standardise_columns(df):
+    """Normalise column names to lowercase snake_case."""
+    df.columns = (
+        df.columns.str.strip()
+        .str.lower()
+        .str.replace(r"\s+", "_", regex=True)
+    )
+    return df
 
 
 def _append_to_google_sheet(sheet_id, df):
@@ -94,94 +84,130 @@ def _append_to_google_sheet(sheet_id, df):
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
         gc = gspread.authorize(creds)
-        
+
         spreadsheet = gc.open_by_key(sheet_id)
         worksheet = spreadsheet.worksheet(GOOGLE_SHEET_TAB_NAME)
-        
-        # Prepare data for append (convert all values to strings to avoid serialisation issues)
-        # Note: gspread.append_rows expects a list of lists.
-        # We include the header only if the sheet is empty, but usually it's not.
+
         rows = df.values.tolist()
-        
-        # Convert timestamps/NaNs to strings
+        # Convert timestamps/NaNs to strings to avoid serialisation issues
         rows = [[str(item) if pd.notnull(item) else "" for item in row] for row in rows]
-        
+
         worksheet.append_rows(rows, value_input_option="USER_ENTERED")
         log.info("Successfully appended to Google Sheet")
     except Exception as e:
         log.error("Failed to append to Google Sheet %s: %s", sheet_id, e)
 
 
-def run(force_full_load: bool = False) -> pd.DataFrame:
+def run(force_full_load: bool = False):
     """
     Ingestion workflow:
-    - If force_full_load is True: Loads the entire Master Sheet (for Monthly reports).
-    - If False (Daily): Scans for new files to append and returns the delta.
+
+    - force_full_load=True (Monthly mode):
+        Loads the entire Master Sheet and returns a single DataFrame.
+
+    - force_full_load=False (Daily mode):
+        Scans ALL files in the Drive folder (xlsx, xlsm, csv, gsheet).
+        Deduplicates each file against the Master Sheet AND against other
+        files processed in the same batch (by card_id).
+        Appends each file's new rows to the Master Sheet individually.
+        Returns a list of dicts: [{"filename": str, "df": DataFrame}, ...]
+        — one entry per file that had genuinely new records.
     """
-    # 1. Fetch Master Sheet (always needed for deduplication or full load)
+    # ── 1. Fetch Master Sheet for deduplication ────────────────────────────
     df_master = None
     if GOOGLE_SHEET_ID:
         df_master = _fetch_from_google_sheet(GOOGLE_SHEET_ID)
         if df_master is not None and not df_master.empty:
-            df_master.columns = (
-                df_master.columns.str.strip()
-                .str.lower()
-                .str.replace(r"\s+", "_", regex=True)
-            )
+            df_master = _standardise_columns(df_master)
             df_master = df_master.drop_duplicates(subset="card_id", keep="first").reset_index(drop=True)
 
+    # ── 2. Monthly mode ────────────────────────────────────────────────────
     if force_full_load:
         log.info("Monthly Mode: Returning full Master Sheet data.")
         return df_master if df_master is not None else pd.DataFrame()
 
-    # 2. Daily Mode: Try to fetch latest from Drive folder to append
-    df_new = None
-    if GOOGLE_DRIVE_DAILY_FOLDER_ID:
+    # ── 3. Daily mode — process ALL files in the Drive folder ──────────────
+    if not GOOGLE_DRIVE_DAILY_FOLDER_ID:
+        log.warning("GOOGLE_DRIVE_DAILY_FOLDER_ID not set — skipping Drive ingestion.")
+        return []
+
+    if not os.path.isfile(SERVICE_ACCOUNT_FILE):
+        log.warning("Service account file '%s' not found — skipping Drive ingestion.", SERVICE_ACCOUNT_FILE)
+        return []
+
+    try:
+        log.info("Scanning Google Drive folder %s for all files", GOOGLE_DRIVE_DAILY_FOLDER_ID)
+        drive = DriveService(SERVICE_ACCOUNT_FILE)
+        files = drive.list_files_in_folder(GOOGLE_DRIVE_DAILY_FOLDER_ID)
+    except Exception as e:
+        log.error("Failed to list Drive folder: %s", e)
+        return []
+
+    if not files:
+        log.info("No files found in Drive folder.")
+        return []
+
+    # Keep only supported file types
+    supported_files = [f for f in files if f["mimeType"] in SUPPORTED_MIME_TYPES]
+    log.info(
+        "Found %d supported file(s) in folder (out of %d total).",
+        len(supported_files), len(files)
+    )
+
+    if not supported_files:
+        return []
+
+    # Running set of card_ids already committed this batch (starts from master)
+    seen_in_batch = (
+        set(df_master["card_id"].tolist())
+        if df_master is not None and not df_master.empty
+        else set()
+    )
+
+    results = []
+
+    for file_meta in supported_files:
+        filename = file_meta["name"]
+        log.info("Processing file: %s", filename)
+
         try:
-            log.info("Scanning Google Drive folder %s for latest file", GOOGLE_DRIVE_DAILY_FOLDER_ID)
-            drive = DriveService(SERVICE_ACCOUNT_FILE)
-            files = drive.list_files_in_folder(GOOGLE_DRIVE_DAILY_FOLDER_ID)
-            
-            if files:
-                latest_file = files[0]
-                mime_type = latest_file['mimeType']
-                log.info("Found latest file: %s", latest_file['name'])
-
-                if mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                    dest_path = os.path.join(INPUT_FOLDER, latest_file['name'])
-                    drive.download_file(latest_file['id'], dest_path)
-                    df_new = pd.read_excel(dest_path, engine="openpyxl")
-                elif mime_type == 'application/vnd.google-apps.spreadsheet':
-                    df_new = _fetch_from_google_sheet(latest_file['id'])
-            else:
-                log.info("No files found in Drive folder.")
-
+            df_new = _read_drive_file(drive, file_meta)
         except Exception as e:
-            log.error("Failed to fetch from Drive folder: %s", e)
+            log.error("Failed to read file '%s': %s — skipping.", filename, e)
+            continue
 
-    # Process and Return Delta
-    if df_new is not None and not df_new.empty:
-        # Standardise new data columns
-        df_new.columns = (
-            df_new.columns.str.strip()
-            .str.lower()
-            .str.replace(r"\s+", "_", regex=True)
+        if df_new is None or df_new.empty:
+            log.info("File '%s' is empty or unreadable — skipping.", filename)
+            continue
+
+        df_new = _standardise_columns(df_new)
+
+        if "card_id" not in df_new.columns:
+            log.warning("File '%s' has no 'card_id' column — skipping.", filename)
+            continue
+
+        # Deduplicate: exclude any card_id we have already seen (master + this batch)
+        df_delta = df_new[~df_new["card_id"].isin(seen_in_batch)].copy()
+        log.info(
+            "File '%s': %d total rows → %d new (deduplicated against %d known IDs).",
+            filename, len(df_new), len(df_delta), len(seen_in_batch)
         )
-        
-        # Deduplicate against Master
-        if df_master is not None and not df_master.empty:
-            df_delta = df_new[~df_new['card_id'].isin(df_master['card_id'])].copy()
-            log.info("Filtered %d new rows against %d existing Master records.", len(df_delta), len(df_master))
-        else:
-            df_delta = df_new.copy()
 
-        if not df_delta.empty:
-            if GOOGLE_SHEET_ID:
-                _append_to_google_sheet(GOOGLE_SHEET_ID, df_delta)
-            return df_delta.reset_index(drop=True)
-        else:
-            log.info("No actually new records (all exists in Master).")
-            return pd.DataFrame()
+        if df_delta.empty:
+            log.info("File '%s': no new records — all card_ids already exist.", filename)
+            continue
 
-    log.info("No new data file found for daily run.")
-    return pd.DataFrame()
+        # Append this file's new rows to the Master Sheet
+        if GOOGLE_SHEET_ID:
+            _append_to_google_sheet(GOOGLE_SHEET_ID, df_delta)
+
+        # Register these IDs so subsequent files in the batch don't duplicate them
+        seen_in_batch.update(df_delta["card_id"].tolist())
+
+        results.append({
+            "filename": filename,
+            "df": df_delta.reset_index(drop=True),
+        })
+
+    log.info("Daily ingestion complete: %d file(s) had new data.", len(results))
+    return results
