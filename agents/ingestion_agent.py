@@ -197,6 +197,15 @@ def run(force_full_load: bool = False):
             log.info("File '%s': no new records — all card_ids already exist.", filename)
             continue
 
+        # Align columns to match the Master Sheet before appending
+        if df_master is not None and not df_master.empty:
+            # Ensure all master columns exist in delta
+            for col in df_master.columns:
+                if col not in df_delta.columns:
+                    df_delta[col] = ""
+            # Reorder delta columns to match master exactly
+            df_delta = df_delta[df_master.columns]
+
         # Append this file's new rows to the Master Sheet
         if GOOGLE_SHEET_ID:
             _append_to_google_sheet(GOOGLE_SHEET_ID, df_delta)
